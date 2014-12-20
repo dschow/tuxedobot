@@ -10,7 +10,11 @@ Tuxedo Bot is a Twitch.TV chat bot built in Java. The bot is based functionality
 * sqlite-jdbc (included)
 
 ## Setup
-In the command line, navigate to where the bot has been downloaded and run the following command:
+In the command line, navigate to where the bot has been downloaded and run the following command to build the bot:
+
+    javac -cp lib/*;. *.java
+
+Then run the following command to start the bot:
 
     java -cp lib/*;. TuxBot
 
