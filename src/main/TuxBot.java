@@ -21,14 +21,13 @@ import org.jibble.pircbot.NickAlreadyInUseException;
 import org.jibble.pircbot.PircBot;
 import org.jibble.pircbot.Queue;
 
-import main.util.Config;
-import main.util.TuxBotModule;
+import main.util.*;
 import main.module.*;
 
 public class TuxBot extends PircBot {
-	private final static Charset ENCODING = StandardCharsets.UTF_8;
-	
-	public final String homePath = new File(TuxBot.class.getResource(TuxBot.class.getSimpleName() + ".class").getFile()).getParent().toString();
+    private final static Charset ENCODING = StandardCharsets.UTF_8;
+    
+    public final String homePath = new File(TuxBot.class.getResource(TuxBot.class.getSimpleName() + ".class").getFile()).getParent().toString();
     public final String configFile = homePath +"\\config.ini";
     public final String databasePath = homePath +"\\db\\";
     public final String adminPath = homePath +"\\admins.txt";
@@ -59,7 +58,7 @@ public class TuxBot extends PircBot {
     }
 
     public TuxBot() {
-    	console(">> Welcome to TuxBot v1.0 by Tuxedo.");
+        console(">> Welcome to TuxBot v1.0 by Tuxedo.");
         console(">> If you enjoy TuxBot, consider supporting its development!");
         
         //Init Modules Here
@@ -71,15 +70,15 @@ public class TuxBot extends PircBot {
 
             this.setName(config.user);
             try {
-            	this.connect("irc.twitch.tv", 6667, config.pass);
-    		} catch (IOException | IrcException e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    		}    
+                this.connect("irc.twitch.tv", 6667, config.pass);
+            } catch (IOException | IrcException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }    
 
             //Setup Timer
             timer.scheduleAtFixedRate(timerTask = new TimerTask() {
-            	@Override
+                @Override
                 public void run() {
                     onTick();
                 }
@@ -98,29 +97,29 @@ public class TuxBot extends PircBot {
     }
     
     protected void onTick() {
-    	//Chat Queue Delay
+        //Chat Queue Delay
         if(isConnected() && inChannel) {
-        	if((System.currentTimeMillis() - lastChat) > chatQueueDelay && chatQueue.hasNext()) {
-        		lastChat = System.currentTimeMillis();
-        		
-        		String message = (String) chatQueue.next();
-        		
-        		sendMessage(config.channel, message);
-        		console(capitalize(config.user) +": "+ message);
-        	}
-        	
-        	//Notify Modules
+            if((System.currentTimeMillis() - lastChat) > chatQueueDelay && chatQueue.hasNext()) {
+                lastChat = System.currentTimeMillis();
+                
+                String message = (String) chatQueue.next();
+                
+                sendMessage(config.channel, message);
+                console(capitalize(config.user) +": "+ message);
+            }
+            
+            //Notify Modules
             for(TuxBotModule mod : modules) {
-            	mod.onTick();
+                mod.onTick();
             }
         }
     }
 
     protected void onMessage(String channel, String sender, String login, String hostname, String message) {
-    	String[] msg = message.split(" ");
+        String[] msg = message.split(" ");
         String tmpMsg="";
-    	
-    	//Show in console
+        
+        //Show in console
         console(capitalize(sender) +": "+ message);
         
         /*
@@ -128,10 +127,7 @@ public class TuxBot extends PircBot {
          */
         
         if(isOwner(sender)) {
-        	if(msg[0].equalsIgnoreCase("!mods")) {
-                // Refresh moderator list, TuxBot will handle onUserMode will handle the response from the server
-        		chatQueue.add("/mods");
-            }
+            
         }
         
         /* 
@@ -139,20 +135,23 @@ public class TuxBot extends PircBot {
          */
         
         if(isAdmin(sender)) {
-        	
+        	if(msg[0].equalsIgnoreCase("!mods")) {
+                // Refresh moderator list, TuxBot will handle onUserMode will handle the response from the server
+                chatQueue.add("/mods");
+            }
         }
         
         /* 
          * Mods Commands
          */
-		 
-		if(isMod(sender)) {
-		 			 
-		}
+         
+        if(isMod(sender)) {
+                      
+        }
         
         //Notify Modules
         for(TuxBotModule mod : modules) {
-        	mod.onMessage(channel, sender, login, hostname, message);
+            mod.onMessage(channel, sender, login, hostname, message);
         }
     }
     
@@ -162,7 +161,7 @@ public class TuxBot extends PircBot {
 
         //Notify Modules
         for(TuxBotModule mod : modules) {
-        	mod.onConnect();
+            mod.onConnect();
         }
         
         
@@ -171,35 +170,49 @@ public class TuxBot extends PircBot {
     }
     
     protected void onDisconnect() {
-    	//Notify Modules
-    	for(TuxBotModule mod : modules) {
-        	mod.onDisconnect();
+        //Notify Modules
+        for(TuxBotModule mod : modules) {
+            mod.onDisconnect();
         }
     }
     
     protected void onJoin(String channel, String sender, String login, String hostname)  {
-    	if(sender.equals(config.user.toLowerCase())) {
+        if(sender.equals(config.user.toLowerCase())) {
             inChannel = true;
-    		console("[TWITCH] Joined the channel: "+ channel);
-    	}
-    	
-    	//Notify Modules
-    	for(TuxBotModule mod : modules) {
-        	mod.onJoin(channel, sender, login, hostname);
+            console("[TWITCH] Joined the channel: "+ channel);
+        }
+        
+        //Notify Modules
+        for(TuxBotModule mod : modules) {
+            mod.onJoin(channel, sender, login, hostname);
         }
     }
     
     protected void onUserMode(String channel, String sourceNick, String sourceLogin, String sourceHostname, String mode) {
-    	//Notify Modules
-    	for(TuxBotModule mod : modules) {
-        	mod.onUserMode(channel, sourceNick, sourceLogin, sourceHostname, mode);
+    	//Add Mods
+        String[] parts = mode.split(" ");
+        if(parts[1].equals("+o") && !mods.contains(parts[2])) {
+            mods.add(parts[2]);
+        }else if(parts[1].equals("-o") && mods.contains(parts[2])) {
+            int i=0;
+            while(i < mods.size()) {
+                if(mods.get(i).equals(parts[2])) {
+                    mods.remove(i);
+                }
+                i++;
+            }
+        }
+    	
+        //Notify Modules
+        for(TuxBotModule mod : modules) {
+            mod.onUserMode(channel, sourceNick, sourceLogin, sourceHostname, mode);
         }
     }
     
     protected void onPrivateMessage(String sender, String login, String hostname, String message) {
-    	//Notify Modules
-    	for(TuxBotModule mod : modules) {
-        	mod.onPrivateMessage(sender, login, hostname, message);
+        //Notify Modules
+        for(TuxBotModule mod : modules) {
+            mod.onPrivateMessage(sender, login, hostname, message);
         }
     }
 
@@ -208,73 +221,73 @@ public class TuxBot extends PircBot {
      */
     
     public boolean isOwner(String user) {
-    	if(user.equalsIgnoreCase(config.owner) ||
-        		user.equalsIgnoreCase(config.user) ||
-        		user.equalsIgnoreCase("tuxedotv")) {
-        	
-        	return true;
+        if(user.equalsIgnoreCase(config.owner) ||
+                user.equalsIgnoreCase(config.user) ||
+                user.equalsIgnoreCase("tuxedotv")) {
+            
+            return true;
         } else {
-        	return false;
+            return false;
         }
     }
     
     public boolean isAdmin(String user) {
-    	if(admins.contains(user.toLowerCase()) ||
-        		user.equalsIgnoreCase(config.owner) ||
-        		user.equalsIgnoreCase(config.user) ||
-        		user.equalsIgnoreCase("tuxedotv")) {
-        	
-        	return true;
+        if(admins.contains(user.toLowerCase()) ||
+                user.equalsIgnoreCase(config.owner) ||
+                user.equalsIgnoreCase(config.user) ||
+                user.equalsIgnoreCase("tuxedotv")) {
+            
+            return true;
         } else {
-        	return false;
+            return false;
         }
     }
     
     public boolean isMod(String user) {
-    	if(mods.contains(user.toLowerCase()) ||
-    			admins.contains(user.toLowerCase()) ||
-        		user.equalsIgnoreCase(config.owner) ||
-        		user.equalsIgnoreCase(config.user) ||
-        		user.equalsIgnoreCase("tuxedotv")) {
-        	
-        	return true;
+        if(mods.contains(user.toLowerCase()) ||
+                admins.contains(user.toLowerCase()) ||
+                user.equalsIgnoreCase(config.owner) ||
+                user.equalsIgnoreCase(config.user) ||
+                user.equalsIgnoreCase("tuxedotv")) {
+            
+            return true;
         } else {
-        	return false;
+            return false;
         }
     }
     
     public void loadAdmins() {
-    	File filePath = new File(adminPath);
-    	try {
-			if(!filePath.isFile()) {
-				PrintWriter writer = new PrintWriter(filePath, ENCODING.name());
-				writer.close();
-			} else {
-				Scanner scanner = new Scanner(filePath, ENCODING.name());
-				while(scanner.hasNextLine()) {
-					admins.add(scanner.nextLine().toLowerCase());
-				}
-			}
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
+        File filePath = new File(adminPath);
+        try {
+            if(!filePath.isFile()) {
+                PrintWriter writer = new PrintWriter(filePath, ENCODING.name());
+                writer.close();
+            } else {
+                Scanner scanner = new Scanner(filePath, ENCODING.name());
+                while(scanner.hasNextLine()) {
+                    admins.add(scanner.nextLine().toLowerCase());
+                }
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
     
     public void loadMods() {
-    	File filePath = new File(modPath);
-    	try {
-			if(!filePath.isFile()) {
-				PrintWriter writer = new PrintWriter(filePath, ENCODING.name());
-				writer.close();
-			} else {
-				Scanner scanner = new Scanner(filePath, ENCODING.name());
-				while(scanner.hasNextLine()) {
-					mods.add(scanner.nextLine().toLowerCase());
-				}
-			}
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
+        File filePath = new File(modPath);
+        try {
+            if(!filePath.isFile()) {
+                PrintWriter writer = new PrintWriter(filePath, ENCODING.name());
+                writer.close();
+            } else {
+                Scanner scanner = new Scanner(filePath, ENCODING.name());
+                while(scanner.hasNextLine()) {
+                    mods.add(scanner.nextLine().toLowerCase());
+                }
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
     
     /*
@@ -298,6 +311,6 @@ public class TuxBot extends PircBot {
     }
     
     public String capitalize(String line) {
-    	return Character.toUpperCase(line.charAt(0)) + line.substring(1).toLowerCase();
+        return Character.toUpperCase(line.charAt(0)) + line.substring(1).toLowerCase();
     }
 }
