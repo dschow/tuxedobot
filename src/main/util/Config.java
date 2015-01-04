@@ -13,6 +13,7 @@ public class Config {
 	private final static Charset ENCODING = StandardCharsets.UTF_8;
 	private File filePath;
 
+	public String owner;
 	public String user;
 	public String pass;
 	public String channel;
@@ -43,7 +44,10 @@ public class Config {
 				
 				if(createConfig) {
 					bot.console("");
-					bot.console("Twitch.TV User: ", false);
+					bot.console("Twitch.TV Owner Username: ", false);
+					owner = System.console().readLine();
+					bot.console("");
+					bot.console("Twitch.TV Username: ", false);
 					user = System.console().readLine();
 					bot.console("");
 					bot.console("To connect to Twitch chat, the bot needs an OAuth token. If you don't have a token, visit the following url: ");
@@ -98,6 +102,9 @@ public class Config {
 					case "channel":
 						this.channel = "#"+ value;
 						break;
+					case "owner":
+						this.owner = value;
+						break;
 					default:
 						break;
 				}
@@ -125,9 +132,10 @@ public class Config {
 		try {
 			PrintWriter writer = new PrintWriter(filePath, ENCODING.name());
 			writer.println("[Settings]");
-			writer.println("user="+user);
-			writer.println("pass="+pass);
-			writer.println("channel="+channel);
+			writer.println("user="+ user);
+			writer.println("pass="+ pass);
+			writer.println("channel="+ channel);
+			writer.println("owner="+ owner);
 			writer.close();
 		} catch(IOException e) {
 			

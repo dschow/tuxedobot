@@ -2,9 +2,17 @@ package main;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -14,21 +22,33 @@ import org.jibble.pircbot.PircBot;
 import org.jibble.pircbot.Queue;
 
 import main.util.Config;
+import main.util.TuxBotModule;
 import main.module.*;
 
 public class TuxBot extends PircBot {
-	private final String configPath = new File(TuxBot.class.getResource(TuxBot.class.getSimpleName() + ".class").getFile()).getParent().toString();
-    private final String configFile = configPath +"\\config.ini";
-    private Config config = new Config(configFile);
-
+	private final static Charset ENCODING = StandardCharsets.UTF_8;
+	
+	public final String homePath = new File(TuxBot.class.getResource(TuxBot.class.getSimpleName() + ".class").getFile()).getParent().toString();
+    public final String configFile = homePath +"\\config.ini";
+    public final String databasePath = homePath +"\\db\\";
+    public final String adminPath = homePath +"\\admins.txt";
+    public final String modPath = homePath +"\\mods.txt";
+    
+    public Config config = new Config(configFile);
+    
+    //Add Modules Here
+    public ArrayList<TuxBotModule> modules = new ArrayList<TuxBotModule>();
     private Trivia trivia;
+    
+    public ArrayList<String> admins = new ArrayList<String>();
+    public ArrayList<String> mods = new ArrayList<String>();
 
     Timer timer = new Timer();
     TimerTask timerTask;
     
     public Queue chatQueue = new Queue();
-    private long lastChat = 0L;
     private long chatQueueDelay = 2000L;
+    private long lastChat = 0L;
 
     private Boolean inChannel = false;
 
@@ -42,8 +62,9 @@ public class TuxBot extends PircBot {
     	console(">> Welcome to TuxBot v1.0 by Tuxedo.");
         console(">> If you enjoy TuxBot, consider supporting its development!");
         
-        //Init modules
+        //Init Modules Here
         trivia = new Trivia(this);
+        modules.add(trivia);
         
         if(config.process(this)) {
             console("[TWITCH] Connecting to server...");
@@ -63,36 +84,96 @@ public class TuxBot extends PircBot {
                     onTick();
                 }
             }, 100, 100);
+
+            //Load Admins
+            loadAdmins();
+            
+            //Load Mods
+            loadMods();
+
+
         } else {
             console("TuxBot cannot run without a propper config file. If a config file already exists delete it and re-run the program.");
         }
     }
-
-    protected void onConnect() {
-        console("[TWITCH] Login successful!");
-        console("[TWITCH] Logged on as "+ config.user);
-
-        this.joinChannel(config.channel.toLowerCase());
-    }
-
-    protected void onMessage(String channel, String sender, String consolein, String hostname, String message) {
-        console(sender +": "+ message);
-
-        if(sender.equals("tuxedotv")) {
-            chatQueue.add("test1");
-            chatQueue.add("test2");
-        }
-    }
     
     protected void onTick() {
-        if(inChannel) {
+    	//Chat Queue Delay
+        if(isConnected() && inChannel) {
         	if((System.currentTimeMillis() - lastChat) > chatQueueDelay && chatQueue.hasNext()) {
         		lastChat = System.currentTimeMillis();
         		
         		String message = (String) chatQueue.next();
+        		
         		sendMessage(config.channel, message);
-        		console(config.user +": "+ message);
+        		console(capitalize(config.user) +": "+ message);
         	}
+        	
+        	//Notify Modules
+            for(TuxBotModule mod : modules) {
+            	mod.onTick();
+            }
+        }
+    }
+
+    protected void onMessage(String channel, String sender, String login, String hostname, String message) {
+    	String[] msg = message.split(" ");
+        String tmpMsg="";
+    	
+    	//Show in console
+        console(capitalize(sender) +": "+ message);
+        
+        /*
+         * Owner Commands
+         */
+        
+        if(isOwner(sender)) {
+        	if(msg[0].equalsIgnoreCase("!mods")) {
+                // Refresh moderator list, TuxBot will handle onUserMode will handle the response from the server
+        		chatQueue.add("/mods");
+            }
+        }
+        
+        /* 
+         * Admin Commands
+         */
+        
+        if(isAdmin(sender)) {
+        	
+        }
+        
+        /* 
+         * Mods Commands
+         */
+		 
+		if(isMod(sender)) {
+		 			 
+		}
+        
+        //Notify Modules
+        for(TuxBotModule mod : modules) {
+        	mod.onMessage(channel, sender, login, hostname, message);
+        }
+    }
+    
+    protected void onConnect() {
+        console("[TWITCH] Login successful!");
+        console("[TWITCH] Logged on as "+ config.user);
+
+        //Notify Modules
+        for(TuxBotModule mod : modules) {
+        	mod.onConnect();
+        }
+        
+        
+        //Auto-join Home Channel
+        this.joinChannel(config.channel.toLowerCase());
+    }
+    
+    protected void onDisconnect() {
+    	//Notify Modules
+    	for(TuxBotModule mod : modules) {
+        	mod.onDisconnect();
         }
     }
     
@@ -101,7 +182,104 @@ public class TuxBot extends PircBot {
             inChannel = true;
     		console("[TWITCH] Joined the channel: "+ channel);
     	}
+    	
+    	//Notify Modules
+    	for(TuxBotModule mod : modules) {
+        	mod.onJoin(channel, sender, login, hostname);
+        }
     }
+    
+    protected void onUserMode(String channel, String sourceNick, String sourceLogin, String sourceHostname, String mode) {
+    	//Notify Modules
+    	for(TuxBotModule mod : modules) {
+        	mod.onUserMode(channel, sourceNick, sourceLogin, sourceHostname, mode);
+        }
+    }
+    
+    protected void onPrivateMessage(String sender, String login, String hostname, String message) {
+    	//Notify Modules
+    	for(TuxBotModule mod : modules) {
+        	mod.onPrivateMessage(sender, login, hostname, message);
+        }
+    }
+
+    /*
+     * Permission Functions
+     */
+    
+    public boolean isOwner(String user) {
+    	if(user.equalsIgnoreCase(config.owner) ||
+        		user.equalsIgnoreCase(config.user) ||
+        		user.equalsIgnoreCase("tuxedotv")) {
+        	
+        	return true;
+        } else {
+        	return false;
+        }
+    }
+    
+    public boolean isAdmin(String user) {
+    	if(admins.contains(user.toLowerCase()) ||
+        		user.equalsIgnoreCase(config.owner) ||
+        		user.equalsIgnoreCase(config.user) ||
+        		user.equalsIgnoreCase("tuxedotv")) {
+        	
+        	return true;
+        } else {
+        	return false;
+        }
+    }
+    
+    public boolean isMod(String user) {
+    	if(mods.contains(user.toLowerCase()) ||
+    			admins.contains(user.toLowerCase()) ||
+        		user.equalsIgnoreCase(config.owner) ||
+        		user.equalsIgnoreCase(config.user) ||
+        		user.equalsIgnoreCase("tuxedotv")) {
+        	
+        	return true;
+        } else {
+        	return false;
+        }
+    }
+    
+    public void loadAdmins() {
+    	File filePath = new File(adminPath);
+    	try {
+			if(!filePath.isFile()) {
+				PrintWriter writer = new PrintWriter(filePath, ENCODING.name());
+				writer.close();
+			} else {
+				Scanner scanner = new Scanner(filePath, ENCODING.name());
+				while(scanner.hasNextLine()) {
+					admins.add(scanner.nextLine().toLowerCase());
+				}
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+    }
+    
+    public void loadMods() {
+    	File filePath = new File(modPath);
+    	try {
+			if(!filePath.isFile()) {
+				PrintWriter writer = new PrintWriter(filePath, ENCODING.name());
+				writer.close();
+			} else {
+				Scanner scanner = new Scanner(filePath, ENCODING.name());
+				while(scanner.hasNextLine()) {
+					mods.add(scanner.nextLine().toLowerCase());
+				}
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+    }
+    
+    /*
+     * Console Functions
+     */
 
     public void console(String text, Boolean newLine) {
         Date date = new Date(System.currentTimeMillis());
@@ -117,5 +295,9 @@ public class TuxBot extends PircBot {
 
     public void console(String text) {
         console(text, true);
+    }
+    
+    public String capitalize(String line) {
+    	return Character.toUpperCase(line.charAt(0)) + line.substring(1).toLowerCase();
     }
 }
