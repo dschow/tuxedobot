@@ -57,7 +57,6 @@ public class Trivia implements TuxBotModule {
         this.triviaFile = bot.homePath +"\\trivia.txt";
         
         bot.console("[TRIVIA] Trivia loaded");
-        bot.chatQueue.add("beep boop");
     }
 
     @Override
