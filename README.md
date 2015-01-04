@@ -16,7 +16,7 @@ You will need an OAuth token for the Twitch API in order to login to the Twitch 
 2. Connect to Twitch, using the Twitch Username you will want the bot to run on.
 3. Save the text after **oauth:**
 
-When the Tuxedo Bot runs for the first time it will ask you to enter basic information it will use to create a config file. This OAuth token will be one of the things you will need to provide to run the bot.
+When the Tuxedo Bot runs for the first time it will ask you to enter basic information that the bot will use to create a config file. This OAuth token will be one of the things you will need to provide to run the bot.
 
 ## Setup
 Navigate to the **src** directory and run the following command to build the bot:
