@@ -22,7 +22,6 @@ public class Trivia implements TuxBotModule {
     private ArrayList<String> leaderboard = new ArrayList<String>();
     private ArrayList<Integer> questions = new ArrayList<Integer>();
     private ArrayList<String> answers = new ArrayList<String>();
-    private ArrayList<String> answersCaseInsensitive = new ArrayList<String>();
     private ArrayList<String> ignore = new ArrayList<String>();
     
 
@@ -111,7 +110,6 @@ public class Trivia implements TuxBotModule {
             } else if((System.currentTimeMillis() - lastCategory) > delayQuestion && delayStage == 1) {
             	// Get Answers
                 answers.clear();
-                answersCaseInsensitive.clear();
                 
                 try {
                     Class.forName("org.sqlite.JDBC");
@@ -120,8 +118,6 @@ public class Trivia implements TuxBotModule {
                     resultSet = statement.executeQuery("SELECT answer FROM answer WHERE qid = '" + questions.get(0) + "'");
                     while (resultSet.next()) {
                         answers.add(resultSet.getString("answer"));
-                        answersCaseInsensitive.add(resultSet.getString("answer"));
-                        answersCaseInsensitive.add(resultSet.getString("answer").toLowerCase());
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -390,7 +386,7 @@ public class Trivia implements TuxBotModule {
          */
         
         if(triviaActive && questionActive) {
-            if(answersCaseInsensitive.contains(message) && !ignore.contains(sender)) {
+            if(containsCaseInsensitive(answers, message) && !ignore.contains(sender)) {
                 int uid = 0;
                 int points = 1;
                 int streak = 1;
@@ -632,6 +628,15 @@ public class Trivia implements TuxBotModule {
         }else{
             return sec + "s";
         }
+    }
+    
+    public boolean containsCaseInsensitive(ArrayList<String> l, String s){
+        for (String string : l){
+            if (string.equalsIgnoreCase(s)){
+                return true;
+            }
+        }
+        return false;
     }
     
     public static boolean isInteger(String s) {
