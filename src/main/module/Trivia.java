@@ -66,7 +66,7 @@ public class Trivia implements TuxBotModule {
             ResultSet resultSet = null;
             Statement statement = null;
             
-            if((System.currentTimeMillis() - lastAnswer) > delayAnswer && delayStage == 0) {
+            if((System.currentTimeMillis() - lastAnswer) > delayCategory && delayStage == 0) {
             	//Check if we have questions
             	loadQuestions();
             	
@@ -285,14 +285,14 @@ public class Trivia implements TuxBotModule {
 						}
 					
 						if(msg[1].equalsIgnoreCase("category")) {
-							delayCategory = newTime;
-							bot.chatQueue.add(">> Time between questions set to: "+ timeToString((int) delayCategory));
+							delayCategory = newTime*1000L;
+							bot.chatQueue.add(">> Time between questions set to: "+ timeToString((int) newTime));
 						}else if(msg[1].equalsIgnoreCase("question")) {
-							delayQuestion = newTime;
-							bot.chatQueue.add(">> Time between category and question set to: "+ timeToString((int) delayQuestion));
+							delayQuestion = newTime*1000L;
+							bot.chatQueue.add(">> Time between category and question set to: "+ timeToString((int) newTime));
 						}else if(msg[1].equalsIgnoreCase("answer")) {
-							delayAnswer = newTime;
-							bot.chatQueue.add(">> Time between question and answer set to: "+ timeToString((int) delayAnswer));
+							delayAnswer = newTime*1000L;
+							bot.chatQueue.add(">> Time between question and answer set to: "+ timeToString((int) newTime));
 						}
 					}
 				}else{
