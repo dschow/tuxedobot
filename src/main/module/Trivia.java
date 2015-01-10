@@ -48,7 +48,7 @@ public class Trivia implements TuxBotModule {
     private long delayLeaderboard = 15*1000L;
     
     private long lastInfo = 0L;
-    private long delayInfo = 30*1000L;    
+    private long delayInfo = 30*1000L; //30 sec
     
     public Trivia(TuxBot b) {
         this.bot = b;
@@ -376,6 +376,58 @@ public class Trivia implements TuxBotModule {
                         bot.chatQueue.add(">> Categories are not being hidden.");
                     } else {
                         bot.chatQueue.add(">> Categories are being hidden.");
+                    }
+                }
+            }
+        }
+        
+        if(msg[0].equalsIgnoreCase("!info")) {
+        	if((System.currentTimeMillis() - lastInfo) > delayInfo) {
+        		lastInfo = System.currentTimeMillis();
+                
+                if(msg.length == 2) {
+                    try {
+                        Class.forName("org.sqlite.JDBC");
+                        connection = DriverManager.getConnection("jdbc:sqlite:"+ databaseFile);
+                        statement = connection.createStatement();
+                        resultSet = statement.executeQuery("SELECT COUNT(*) AS count FROM user WHERE user = '" + msg[1].toLowerCase() + "'");
+                        resultSet.next();
+                        if(resultSet.getInt("count") == 1) {
+                            resultSet = statement.executeQuery("SELECT * FROM user WHERE user = '" + msg[1].toLowerCase() + "'");
+                            resultSet.next();
+                            bot.chatQueue.add(msg[1] + " [" + resultSet.getInt("points") + "][streak: " + resultSet.getInt("maxstreak") + "]");
+                        }else{
+                        	bot.chatQueue.add("The user " + msg[1] + " has not scored points.");
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            resultSet.close();
+                            statement.close();
+                            connection.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }else{
+                    try {
+                        Class.forName("org.sqlite.JDBC");
+                        connection = DriverManager.getConnection("jdbc:sqlite:"+ databaseFile);
+                        statement = connection.createStatement();
+                        resultSet = statement.executeQuery("SELECT * FROM user WHERE id = '" + getUid(sender.toLowerCase()) + "'");
+                        resultSet.next();
+                        bot.chatQueue.add(sender + " [points: " + resultSet.getInt("points") + "][streak: " + resultSet.getInt("maxstreak") + "]");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            resultSet.close();
+                            statement.close();
+                            connection.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
