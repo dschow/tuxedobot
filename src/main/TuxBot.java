@@ -49,6 +49,8 @@ public class TuxBot extends PircBot {
     private long chatQueueDelay = 2000L;
     private long lastChat = 0L;
 
+    private int reconnectAttemps = 0;
+    private long lastReconnectAttempt = 0L;
     private Boolean inChannel = false;
 
     public static void main(String[] args) throws Exception {
@@ -74,7 +76,7 @@ public class TuxBot extends PircBot {
             } catch (IOException | IrcException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
-            }    
+            }
 
             //Setup Timer
             timer.scheduleAtFixedRate(timerTask = new TimerTask() {
@@ -111,6 +113,44 @@ public class TuxBot extends PircBot {
             //Notify Modules
             for(TuxBotModule mod : modules) {
                 mod.onTick();
+            }
+        //Reconnect
+        }else if(!isConnected()) {
+            while(!isConnected()) {
+                //Every second
+                if (reconnectAttemps < 5 && (System.currentTimeMillis() - lastReconnectAttempt) > 1000) {
+                    reconnectAttemps++;
+                    lastReconnectAttempt = System.currentTimeMillis();
+
+                    try {
+                        this.connect("irc.twitch.tv", 6667, config.pass);
+                    } catch (IOException | IrcException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                //Every 5 seconds
+                } else if (reconnectAttemps < 10 && (System.currentTimeMillis() - lastReconnectAttempt) > 5000) {
+                    reconnectAttemps++;
+                    lastReconnectAttempt = System.currentTimeMillis();
+
+                    try {
+                        this.connect("irc.twitch.tv", 6667, config.pass);
+                    } catch (IOException | IrcException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                //Every 30 seconds
+                } else if((System.currentTimeMillis() - lastReconnectAttempt) > 30000) {
+                    reconnectAttemps++;
+                    lastReconnectAttempt = System.currentTimeMillis();
+
+                    try {
+                        this.connect("irc.twitch.tv", 6667, config.pass);
+                    } catch (IOException | IrcException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
@@ -156,6 +196,8 @@ public class TuxBot extends PircBot {
     }
     
     protected void onConnect() {
+        reconnectAttemps = 0;
+
         console("[TWITCH] Login successful!");
         console("[TWITCH] Logged on as "+ config.user);
 
@@ -163,7 +205,6 @@ public class TuxBot extends PircBot {
         for(TuxBotModule mod : modules) {
             mod.onConnect();
         }
-        
         
         //Auto-join Home Channel
         this.joinChannel(config.channel.toLowerCase());

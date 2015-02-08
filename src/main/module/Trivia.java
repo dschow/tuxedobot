@@ -291,7 +291,15 @@ public class Trivia implements TuxBotModule {
 							bot.chatQueue.add(">> Time between question and answer set to: "+ timeToString((int) newTime));
 						}
 					}
-				}else{
+				}else if(msg.length == 2) {
+                    if(msg[1].equalsIgnoreCase("category")) {
+                        bot.chatQueue.add(">> Time between questions: "+ timeToString((int) (delayCategory/1000)));
+                    }else if(msg[1].equalsIgnoreCase("question")) {
+                        bot.chatQueue.add(">> Time between category and question: "+ timeToString((int) (delayQuestion/1000)));
+                    }else if(msg[1].equalsIgnoreCase("answer")) {
+                        bot.chatQueue.add(">> Time between question and answer: "+ timeToString((int) (delayAnswer/1000)));
+                    }
+                }else{
 					bot.chatQueue.add(">> Invalid time format: !time [type: delay/question/answer] [time (sec): 10-600]");
 				}
 			}
