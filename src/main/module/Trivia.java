@@ -42,7 +42,7 @@ public class Trivia implements TuxBotModule {
     private int delayStage = 0; //0 = waiting for category, 1 = waiting for question, 2 = waiting for answer
     
     private boolean skipCategory = false;
-    private boolean hideCategory = false;
+    private boolean hideCategory = true;
     
     private long lastLeaderboard = 0L;
     private long delayLeaderboard = 15*1000L;
@@ -312,12 +312,16 @@ public class Trivia implements TuxBotModule {
         if(bot.isMod(sender)) {
             //Start Trivia
             if(msg[0].equalsIgnoreCase("!start")) {
-                lastAnswer = System.currentTimeMillis();
-                delayStage = 0;
-                triviaActive = true;
-                questionActive = false;
-                noAnswerCount = 0;
-                bot.chatQueue.add(">> Starting Trivia!");
+            	if(!triviaActive) {
+	                lastAnswer = System.currentTimeMillis();
+	                delayStage = 0;
+	                triviaActive = true;
+	                questionActive = false;
+	                noAnswerCount = 0;
+	                bot.chatQueue.add(">> Starting Trivia!");
+	            } else {
+	            	bot.chatQueue.add(">> Trivia has already been started.");
+	            }
                 
             //Stop Trivia
             } else if (msg[0].equalsIgnoreCase("!stop") || msg[0].equalsIgnoreCase("!end")) {
