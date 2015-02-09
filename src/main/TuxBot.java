@@ -211,6 +211,8 @@ public class TuxBot extends PircBot {
     }
     
     protected void onDisconnect() {
+		console("[TWITCH] Disconnected!");
+
         //Notify Modules
         for(TuxBotModule mod : modules) {
             mod.onDisconnect();
