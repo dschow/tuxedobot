@@ -122,33 +122,36 @@ public class TuxBot extends PircBot {
                     reconnectAttemps++;
                     lastReconnectAttempt = System.currentTimeMillis();
 
+                    console("[TWITCH] Attempting to reconnect...");
+
                     try {
                         this.connect("irc.twitch.tv", 6667, config.pass);
                     } catch (IOException | IrcException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+
                     }
                 //Every 5 seconds
                 } else if (reconnectAttemps < 10 && (System.currentTimeMillis() - lastReconnectAttempt) > 5000) {
                     reconnectAttemps++;
                     lastReconnectAttempt = System.currentTimeMillis();
 
+                    console("[TWITCH] Attempting to reconnect...");
+
                     try {
                         this.connect("irc.twitch.tv", 6667, config.pass);
                     } catch (IOException | IrcException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+
                     }
                 //Every 30 seconds
                 } else if((System.currentTimeMillis() - lastReconnectAttempt) > 30000) {
                     reconnectAttemps++;
                     lastReconnectAttempt = System.currentTimeMillis();
 
+                    console("[TWITCH] Attempting to reconnect...");
+
                     try {
                         this.connect("irc.twitch.tv", 6667, config.pass);
                     } catch (IOException | IrcException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                    	
                     }
                 }
             }
