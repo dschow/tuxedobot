@@ -211,6 +211,7 @@ public class Trivia implements TuxBotModule {
 
     @Override
     public void onMessage(String channel, String sender, String login, String hostname, String message) {
+    	message = message.trim();
         String[] msg = message.split(" ");
         Connection connection = null;
         ResultSet resultSet = null;
