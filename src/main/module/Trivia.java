@@ -391,9 +391,47 @@ public class Trivia implements TuxBotModule {
                         bot.chatQueue.add(">> Categories are being hidden.");
                     }
                 }
+            }else if(msg[0].equalsIgnoreCase("!leaderboard") || msg[0].equalsIgnoreCase("!top")) {
+                if((System.currentTimeMillis() - lastLeaderboard) > delayLeaderboard) {
+        			lastLeaderboard = System.currentTimeMillis();
+                    
+                    leaderboard.clear();
+                    try {
+                        Class.forName("org.sqlite.JDBC");
+                        connection = DriverManager.getConnection("jdbc:sqlite:"+ databaseFile);
+                        statement = connection.createStatement();
+                        resultSet = statement.executeQuery("SELECT * FROM user ORDER BY points DESC");
+
+                        for(int i=1; resultSet.next() && i<=10; i++) {
+                            leaderboard.add(resultSet.getString("user") + " [" + resultSet.getString("points") + "]");
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            resultSet.close();
+                            statement.close();
+                            connection.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    
+                    tmpMsg = "";
+                    for(int i=0; i<leaderboard.size(); i++) {
+                        if(i == leaderboard.size()-1) {
+                            tmpMsg += leaderboard.get(i);
+                        }else{
+                            tmpMsg += leaderboard.get(i) + ", ";
+                        }
+                    }
+                    
+                    bot.chatQueue.add(tmpMsg);
+                }
             }
         }
-        
+
         if(msg[0].equalsIgnoreCase("!info")) {
         	if((System.currentTimeMillis() - lastInfo) > delayInfo) {
         		lastInfo = System.currentTimeMillis();
